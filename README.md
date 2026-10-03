@@ -187,52 +187,20 @@ newgrp docker
 # Applications
 [General Source](https://trash-guide.info/)
 
-### Pi-Hole
-Setup local DNS
-
-#### Router changes
-- Internet DNS
-- Local Network DNS
-
-### Proxy
-
-
-### Prowlarr
-- Set login information
-- Add Indexer
-- Add Sonarr and Radarr (Settings → Apps → Applications)
-
-### Sonarr
-Configuration:
-- Set login information
-- Set language to ITA
-- Add Download Clients to Tranmission (delete category)
-- Set Sonar API Key (Settings → General → Security → API Key) in Prowlarr
-- Set Settings → Media Management → Episode Naming → Rename Episodes to true
-- Add new Settings → Custom Format with Conditions Language Italian
-
-Naming convention
-- Series Folder Format: `{Series TitleYear}`
-- Season Folder Format: `Season {season:00}`
-- Episode Format
-    - Standard: `{Series TitleYear} - S{season:00}E{episode:00} - {Episode CleanTitle:90} {[Custom Formats]}{[Quality Full]}{[Mediainfo AudioCodec}{ Mediainfo AudioChannels]}{[MediaInfo VideoDynamicRangeType]}{[Mediainfo VideoCodec]}{-Release Group}`
-    - Daily: `{Series TitleYear} - {Air-Date} - {Episode CleanTitle:90} {[Custom Formats]}{[Quality Full]}{[Mediainfo AudioCodec}{ Mediainfo AudioChannels]}{[MediaInfo VideoDynamicRangeType]}{[Mediainfo VideoCodec]}{-Release Group}`
-    - Anime: `{Series TitleYear} - S{season:00}E{episode:00} - {absolute:000} - {Episode CleanTitle:90} {[Custom Formats]}{[Quality Full]}{[Mediainfo AudioCodec}{ Mediainfo AudioChannels]}{MediaInfo AudioLanguages}{[MediaInfo VideoDynamicRangeType]}[{Mediainfo VideoCodec }{MediaInfo VideoBitDepth}bit]{-Release Group}`
-
-### Sonarr Anime Plugin
-- Set Sonarr API Key in the .env file
-
-### Radarr
-Configuration:
-- Set login information
-- Add qBittorrent as Download Client (delete category)
-- Set Radarr API Key (Settings → General → Security → API Key) in Prowlarr
-- Set Settings → UI → Language → Movie Info Language to Italian
-- Set Settings → Metadata → Certification Country to Italy
-- Set Settings → Media Management → Movie Naming → Rename Movies to true
-
-Naming convention
-- Standard Movie Format: `{Movie CleanTitle} {(Release Year)} - {{Edition Tags}} {[MediaInfo 3D]}{[Custom Formats]}{[Quality Full]}{[Mediainfo AudioCodec}{ Mediainfo AudioChannels]}{[MediaInfo VideoDynamicRangeType]}{[Mediainfo VideoCodec]}{-Release Group}`
-
-### qBittorrent
-Follow settings in: 
+| App | Purpose | Proxy target |
+|---|---|---|
+| [Pi-hole](https://github.com/pi-hole/docker-pi-hole) | Local DNS and ad blocking | `pihole:80` |
+| [Nginx Proxy Manager](https://github.com/NginxProxyManager/nginx-proxy-manager) | Reverse proxy for `*.ron.home` | admin on port 81 |
+| [Homepage](https://gethomepage.dev/) | Dashboard | `homepage:3000` |
+| [Portainer](https://docs.portainer.io/) | Container management | `portainer:9000` |
+| [Home Assistant](https://www.home-assistant.io/) | Home automation | `<server IP>:8123` |
+| [Jellyfin](https://docs.linuxserver.io/images/docker-jellyfin/) | Media server | `jellyfin:8096` |
+| [Prowlarr](https://docs.linuxserver.io/images/docker-prowlarr) | Indexer manager | `prowlarr:9696` |
+| [Sonarr](https://docs.linuxserver.io/images/docker-sonarr/) | TV shows | `sonarr:8989` |
+| [Sonarr Anime Downloader](https://github.com/MainKronos/Sonarr-AnimeDownloader) | Anime downloads for Sonarr | `sonarr_anime:5000` |
+| [Radarr](https://docs.linuxserver.io/images/docker-radarr) | Movies | `radarr:7878` |
+| [Bazarr](https://docs.linuxserver.io/images/docker-bazarr/) | Subtitles | `bazarr:6767` |
+| [qBittorrent](https://docs.linuxserver.io/images/docker-qbittorrent/) | Download client | `qbittorrent:8088` |
+| [Tailscale](https://tailscale.com/docs/features/containers/docker) | Remote access | - |
+| [Watchtower](https://watchtower.nickfedor.com/) | Monthly image updates | - |
+| [Backup](https://offen.github.io/docker-volume-backup/) | Weekly config backup to the NAS | - |
