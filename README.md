@@ -202,5 +202,5 @@ newgrp docker
 | [Bazarr](https://docs.linuxserver.io/images/docker-bazarr/) | Subtitles | `bazarr:6767` |
 | [qBittorrent](https://docs.linuxserver.io/images/docker-qbittorrent/) | Download client | `qbittorrent:8088` |
 | [Tailscale](https://tailscale.com/docs/features/containers/docker) | Remote access | - |
-| [Watchtower](https://watchtower.nickfedor.com/) | Monthly image updates | - |
+| [Watchtower](https://watchtower.nickfedor.com/) | Weekly image updates | - |
 | [Backup](https://offen.github.io/docker-volume-backup/) | Weekly config backup to the NAS | - |

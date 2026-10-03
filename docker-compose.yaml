@@ -235,6 +235,8 @@ services:
       TZ: ${TZ}
       WATCHTOWER_SCHEDULE: "0 0 5 * * 1" # Monday 05:00, after the backup
       WATCHTOWER_CLEANUP: "true"
+      WATCHTOWER_HTTP_API_ENDPOINTS: metrics
+      WATCHTOWER_HTTP_API_TOKEN: ${WATCHTOWER_TOKEN}
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     networks:
