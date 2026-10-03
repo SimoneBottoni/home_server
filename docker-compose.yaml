@@ -40,6 +40,7 @@ services:
       HOMEPAGE_ALLOWED_HOSTS: homepage.ron.home
     volumes:
       - ${LOCAL_PATH}/homepage:/app/config
+      - ${NAS_PATH}:/mnt/nas:ro # Disk usage widget
 
   # https://github.com/pi-hole/docker-pi-hole
   pihole:
