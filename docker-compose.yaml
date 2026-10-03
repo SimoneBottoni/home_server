@@ -1,53 +1,59 @@
+x-base: &base
+  restart: unless-stopped
+  pull_policy: always
+  logging:
+    options:
+      max-size: 10m
+      max-file: "3"
+
+x-common: &common
+  <<: *base
+  networks:
+    - ron-net
+  labels:
+    - docker-volume-backup.stop-during-backup=true
+  depends_on:
+    - pihole
+
+x-arr-env: &arr-env
+  PUID: ${PUID}
+  PGID: ${PGID}
+  TZ: ${TZ}
+
 services:
+  # https://docs.portainer.io/start/install-ce/server/docker/linux
   portainer:
-    container_name: portainer
+    <<: *common
     image: portainer/portainer-ce:lts
-    pull_policy: always
-    restart: unless-stopped
+    container_name: portainer
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - ${LOCAL_PATH}/portainer/data:/data
-    ports:
-      - 9000:9000
-    depends_on:
-      - pihole
-    networks:
-      - ron-net
 
-  heimdall:
-    image: lscr.io/linuxserver/heimdall:latest
-    container_name: heimdall
-    pull_policy: always
-    restart: unless-stopped
-    ports:
-      - "8888:80"
+  # https://gethomepage.dev/installation/docker/
+  homepage:
+    <<: *common
+    image: ghcr.io/gethomepage/homepage:latest
+    container_name: homepage
     environment:
-      - PUID=${PUID}
-      - PGID=${PGID}
-      - TZ=${TZ}
-      - ALLOW_INTERNAL_REQUESTS=true
+      <<: *arr-env
+      HOMEPAGE_ALLOWED_HOSTS: homepage.ron.home
     volumes:
-      - ${LOCAL_PATH}/heimdall:/config
-    depends_on:
-      - pihole
-    networks:
-      - ron-net
+      - ${LOCAL_PATH}/homepage:/app/config
 
+  # https://github.com/pi-hole/docker-pi-hole
   pihole:
-    container_name: pihole
+    <<: *base
     image: pihole/pihole:latest
-    pull_policy: always
-    restart: unless-stopped
+    container_name: pihole
     ports:
       - "53:53/tcp"
       - "53:53/udp"
-      - "8080:80/tcp"
-      - "8443:443/tcp"
     environment:
-      - TZ=${TZ}
-      - FTLCONF_webserver_api_password=${PIHOLE_PSW}
-      - FTLCONF_dns_listeningMode=ALL
-      - FTLCONF_dns_upstreams=1.1.1.1;1.0.0.1;8.8.8.8;8.8.4.4
+      TZ: ${TZ}
+      FTLCONF_webserver_api_password: ${PIHOLE_PSW}
+      FTLCONF_dns_listeningMode: ALL
+      FTLCONF_dns_upstreams: 1.1.1.1;1.0.0.1;8.8.8.8;8.8.4.4
     volumes:
       - ${LOCAL_PATH}/pihole:/etc/pihole
     cap_add:
@@ -60,19 +66,36 @@ services:
       - SYS_NICE
     networks:
       - ron-net
+    labels:
+      - docker-volume-backup.stop-during-backup=true
+
+  # https://hub.docker.com/r/homeassistant/home-assistant
+  # Host network (device discovery), so not on ron-net: proxy to <server IP>:8123
+  home-assistant:
+    <<: *base
+    image: ghcr.io/home-assistant/home-assistant:stable
+    container_name: home-assistant
+    environment:
+      TZ: ${TZ}
+    volumes:
+      - ${LOCAL_PATH}/home-assistant/config:/config
+      - /run/dbus:/run/dbus:ro
+    privileged: true
+    network_mode: host
+    labels:
+      - docker-volume-backup.stop-during-backup=true
+    depends_on:
+      - pihole
 
   # https://docs.linuxserver.io/images/docker-jellyfin/
   jellyfin:
+    <<: *common
     image: lscr.io/linuxserver/jellyfin:latest
     container_name: jellyfin
-    pull_policy: always
-    restart: unless-stopped
     environment:
-      - PUID=${PUID}
-      - PGID=${PGID}
-      - TZ=${TZ}
-      - JELLYFIN_PublishedServerUrl=${JELLYFIN_PUBLISHEDSERVERURL}
-      - DOCKER_MODS=linuxserver/mods:jellyfin-opencl-intel
+      <<: *arr-env
+      JELLYFIN_PublishedServerUrl: ${JELLYFIN_PUBLISHEDSERVERURL}
+      DOCKER_MODS: linuxserver/mods:jellyfin-opencl-intel
     volumes:
       - ${LOCAL_PATH}/jellyfin/config:/config
       - ${NAS_PATH}/tv_shows:/data/tvshows
@@ -80,172 +103,161 @@ services:
       - ${NAS_PATH}/movies:/data/movies
       - /dev/shm:/transcode
     ports:
-      - "8096:8096"
-      - "7359:7359/udp"
+      - "7359:7359/udp" # Client discovery
     group_add:
-      - "992"
+      - "${RENDER_GID:-992}" # Host render group, for /dev/dri
     devices:
       - /dev/dri:/dev/dri
-    depends_on:
-      - pihole
-    networks:
-      - ron-net
 
   # https://docs.linuxserver.io/images/docker-prowlarr
   prowlarr:
+    <<: *common
     image: lscr.io/linuxserver/prowlarr:latest
     container_name: prowlarr
-    pull_policy: always
-    restart: unless-stopped
-    environment:
-      - PUID=${PUID}
-      - PGID=${PGID}
-      - TZ=${TZ}
+    environment: *arr-env
     volumes:
       - ${LOCAL_PATH}/prowlarr/data:/config
-    ports:
-      - "9696:9696"
-    depends_on:
-      - pihole
-    networks:
-      - ron-net
 
   # https://docs.linuxserver.io/images/docker-sonarr/
   sonarr:
+    <<: *common
     image: lscr.io/linuxserver/sonarr:latest
     container_name: sonarr
-    pull_policy: always
-    restart: unless-stopped
-    environment:
-      - PUID=${PUID}
-      - PGID=${PGID}
-      - TZ=${TZ}
+    environment: *arr-env
     volumes:
       - ${LOCAL_PATH}/sonarr/data:/config
       - ${NAS_PATH}/tv_shows:/tv_shows
       - ${NAS_PATH}/anime:/anime
       - ${DOWNLOAD_PATH}:/downloads
-    ports:
-      - "8989:8989"
-    depends_on:
-      - pihole
-    networks:
-      - ron-net
 
   # https://github.com/MainKronos/Sonarr-AnimeDownloader
   sonarr_anime:
+    <<: *common
     image: ghcr.io/mainkronos/anime_downloader:latest
     container_name: sonarr_anime
-    pull_policy: always
-    restart: unless-stopped
     environment:
-      - SONARR_URL=http://sonarr.ron.home
-      - ANIMEWORLD_URL=https://www.animeworld.ac
-      - API_KEY=${SONARR_APIKEY}
-      - TZ=${TZ}
-      - PUID=${PUID}
-      - PGID=${PGID}
+      <<: *arr-env
+      SONARR_URL: http://sonarr:8989
+      ANIMEWORLD_URL: https://www.animeworld.ac
+      API_KEY: ${SONARR_APIKEY}
     volumes:
       - ${LOCAL_PATH}/sonarr_anime/data:/src/database
       - ${NAS_PATH}/anime:/anime
       - ${DOWNLOAD_PATH}/anime:/downloads
       - ${LOCAL_PATH}/sonarr_anime/connections:/src/script
-    ports:
-      - "5000:5000"
-    depends_on:
-      - pihole
-    networks:
-      - ron-net
 
   # https://docs.linuxserver.io/images/docker-radarr
   radarr:
+    <<: *common
     image: lscr.io/linuxserver/radarr:latest
     container_name: radarr
-    pull_policy: always
-    restart: unless-stopped
-    environment:
-      - PUID=${PUID}
-      - PGID=${PGID}
-      - TZ=${TZ}
+    environment: *arr-env
     volumes:
       - ${LOCAL_PATH}/radarr/data:/config
       - ${NAS_PATH}/movies:/movies
       - ${DOWNLOAD_PATH}:/downloads
-    ports:
-      - "7878:7878"
-    depends_on:
-      - pihole
-    networks:
-      - ron-net
 
   # https://docs.linuxserver.io/images/docker-bazarr/#usage
   bazarr:
+    <<: *common
     image: lscr.io/linuxserver/bazarr:latest
     container_name: bazarr
-    pull_policy: always
-    restart: unless-stopped
-    environment:
-      - PUID=${PUID}
-      - PGID=${PGID}
-      - TZ=${TZ}
+    environment: *arr-env
     volumes:
       - ${LOCAL_PATH}/bazarr/config:/config
       - ${NAS_PATH}/movies:/movies
       - ${NAS_PATH}/tv_shows:/tv_shows
       - ${NAS_PATH}/anime:/anime
-    ports:
-      - 6767:6767
-    depends_on:
-      - pihole
-    networks:
-      - ron-net
 
   # https://docs.linuxserver.io/images/docker-qbittorrent/
   qbittorrent:
+    <<: *common
     image: lscr.io/linuxserver/qbittorrent:latest
     container_name: qbittorrent
-    pull_policy: always
-    restart: unless-stopped
     environment:
-      - PUID=${PUID}
-      - PGID=${PGID}
-      - TZ=${TZ}
-      - WEBUI_PORT=8088
-      - TORRENTING_PORT=6881
+      <<: *arr-env
+      WEBUI_PORT: "8088"
+      TORRENTING_PORT: "6881"
     volumes:
       - ${LOCAL_PATH}/qbittorrent:/config
       - ${DOWNLOAD_PATH}:/downloads
     ports:
-      - "8088:8088"
       - "6881:6881"
       - "6881:6881/udp"
-    depends_on:
-      - pihole
-    networks:
-      - ron-net
 
   # https://github.com/NginxProxyManager/nginx-proxy-manager
   nginx-proxy:
-    image: "jc21/nginx-proxy-manager:latest"
+    <<: *common
+    image: jc21/nginx-proxy-manager:latest
     container_name: nginx-proxy
-    pull_policy: always
-    restart: unless-stopped
     environment:
-      - PUID=${PUID}
-      - PGID=${PGID}
-      - TZ=${TZ}
-      - DISABLE_IPV6=true
+      <<: *arr-env
+      DISABLE_IPV6: "true"
     volumes:
       - ${LOCAL_PATH}/nginx-proxy/data:/data
       - ${LOCAL_PATH}/nginx-proxy/letsencrypt:/etc/letsencrypt
     ports:
-      - "80:80" # Public HTTP Port
-      - "443:443" # Public HTTPS Port
-      - "81:81" # Admin Web Port
+      - "80:80" # HTTP
+      - "443:443" # HTTPS
+      - "81:81" # Admin UI
+
+  # https://tailscale.com/docs/features/containers/docker
+  tailscale:
+    <<: *base
+    image: tailscale/tailscale:latest
+    container_name: tailscale
+    network_mode: host
+    environment:
+      TS_AUTHKEY: ${TS_AUTHKEY}
+      TS_AUTH_ONCE: "true"
+      TS_STATE_DIR: /var/lib/tailscale
+      TS_USERSPACE: "false"
+      TS_HOSTNAME: home-server
+      # Makes the server's LAN IP reachable remotely, so the pihole *.ron.home records keep working
+      TS_ROUTES: ${SERVER_IP}/32
+    volumes:
+      - ${LOCAL_PATH}/tailscale:/var/lib/tailscale
+    devices:
+      - /dev/net/tun:/dev/net/tun
+    cap_add:
+      - NET_ADMIN
+      - NET_RAW
     depends_on:
       - pihole
+
+  # https://watchtower.nickfedor.com/
+  watchtower:
+    <<: *base
+    image: nickfedor/watchtower:latest
+    container_name: watchtower
+    environment:
+      TZ: ${TZ}
+      WATCHTOWER_SCHEDULE: "0 0 5 1 * *" # 1st of the month, 05:00
+      WATCHTOWER_CLEANUP: "true"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
     networks:
       - ron-net
+    depends_on:
+      - pihole
+
+  # https://offen.github.io/docker-volume-backup/
+  backup:
+    <<: *base
+    image: offen/docker-volume-backup:v2
+    container_name: backup
+    network_mode: none
+    environment:
+      TZ: ${TZ}
+      BACKUP_CRON_EXPRESSION: "0 4 * * 1" # Monday 04:00
+      BACKUP_FILENAME: services-%Y-%m-%d.tar.gz
+      BACKUP_PRUNING_PREFIX: services-
+      BACKUP_RETENTION_DAYS: "28"
+      BACKUP_EXCLUDE_REGEXP: jellyfin/config/cache
+    volumes:
+      - ${LOCAL_PATH}:/backup/services:ro
+      - ${NAS_PATH}/backups:/archive
+      - /var/run/docker.sock:/var/run/docker.sock:ro
 
 networks:
   ron-net:
