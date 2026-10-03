@@ -232,7 +232,7 @@ services:
     container_name: watchtower
     environment:
       TZ: ${TZ}
-      WATCHTOWER_SCHEDULE: "0 0 5 1 * *" # 1st of the month, 05:00
+      WATCHTOWER_SCHEDULE: "0 0 5 * * 1" # Monday 05:00, after the backup
       WATCHTOWER_CLEANUP: "true"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
