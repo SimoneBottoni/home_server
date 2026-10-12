@@ -191,9 +191,8 @@ newgrp docker
 |---|---|---|
 | [Pi-hole](https://github.com/pi-hole/docker-pi-hole) | Local DNS and ad blocking | `pihole:80` |
 | [Nginx Proxy Manager](https://github.com/NginxProxyManager/nginx-proxy-manager) | Reverse proxy for `*.ron.home` | admin on port 81 |
-| [Homepage](https://gethomepage.dev/) | Dashboard | `homepage:3000` |
 | [Portainer](https://docs.portainer.io/) | Container management | `portainer:9000` |
-| [Home Assistant](https://www.home-assistant.io/) | Home automation | `<server IP>:8123` |
+| [Home Assistant](https://www.home-assistant.io/) | Home automation and dashboard | `<server IP>:8123` |
 | [Jellyfin](https://docs.linuxserver.io/images/docker-jellyfin/) | Media server | `jellyfin:8096` |
 | [Prowlarr](https://docs.linuxserver.io/images/docker-prowlarr) | Indexer manager | `prowlarr:9696` |
 | [Sonarr](https://docs.linuxserver.io/images/docker-sonarr/) | TV shows | `sonarr:8989` |

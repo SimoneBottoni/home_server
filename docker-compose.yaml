@@ -30,18 +30,6 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
       - ${LOCAL_PATH}/portainer/data:/data
 
-  # https://gethomepage.dev/installation/docker/
-  homepage:
-    <<: *common
-    image: ghcr.io/gethomepage/homepage:latest
-    container_name: homepage
-    environment:
-      <<: *arr-env
-      HOMEPAGE_ALLOWED_HOSTS: homepage.ron.home
-    volumes:
-      - ${LOCAL_PATH}/homepage:/app/config
-      - ${NAS_PATH}:/mnt/nas:ro # Disk usage widget
-
   # https://github.com/pi-hole/docker-pi-hole
   pihole:
     <<: *base
@@ -71,7 +59,6 @@ services:
       - docker-volume-backup.stop-during-backup=true
 
   # https://hub.docker.com/r/homeassistant/home-assistant
-  # Host network (device discovery), so not on ron-net: proxy to <server IP>:8123
   home-assistant:
     <<: *base
     image: ghcr.io/home-assistant/home-assistant:stable
@@ -81,6 +68,7 @@ services:
     volumes:
       - ${LOCAL_PATH}/home-assistant/config:/config
       - /run/dbus:/run/dbus:ro
+      - ${NAS_PATH}:/mnt/nas:ro # Disk usage
     privileged: true
     network_mode: host
     labels:
@@ -235,8 +223,6 @@ services:
       TZ: ${TZ}
       WATCHTOWER_SCHEDULE: "0 0 5 * * 1" # Monday 05:00, after the backup
       WATCHTOWER_CLEANUP: "true"
-      WATCHTOWER_HTTP_API_ENDPOINTS: metrics
-      WATCHTOWER_HTTP_API_TOKEN: ${WATCHTOWER_TOKEN}
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     networks:
