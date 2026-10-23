@@ -1,40 +1,26 @@
-x-base: &base
+# Applied to every service
+x-defaults: &defaults
   restart: unless-stopped
-  pull_policy: always
   logging:
-    options:
-      max-size: 10m
-      max-file: "3"
-
-x-common: &common
-  <<: *base
-  networks:
-    - ron-net
-  labels:
-    - docker-volume-backup.stop-during-backup=true
-  depends_on:
-    - pihole
-
-x-arr-env: &arr-env
-  PUID: ${PUID}
-  PGID: ${PGID}
-  TZ: ${TZ}
+    driver: local
 
 services:
   # https://docs.portainer.io/start/install-ce/server/docker/linux
   portainer:
-    <<: *common
     image: portainer/portainer-ce:lts
     container_name: portainer
+    <<: *defaults
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - ${LOCAL_PATH}/portainer/data:/data
+    labels:
+      - docker-volume-backup.stop-during-backup=true
 
   # https://github.com/pi-hole/docker-pi-hole
   pihole:
-    <<: *base
     image: pihole/pihole:latest
     container_name: pihole
+    <<: *defaults
     ports:
       - "53:53/tcp"
       - "53:53/udp"
@@ -46,23 +32,16 @@ services:
     volumes:
       - ${LOCAL_PATH}/pihole:/etc/pihole
     cap_add:
-      # See https://github.com/pi-hole/docker-pi-hole#note-on-capabilities
-      # Required if you are using Pi-hole as your DHCP server, else not needed
-      - NET_ADMIN
-      # Required if you are using Pi-hole as your NTP client to be able to set the host's system time
-      - SYS_TIME
-      # Optional, if Pi-hole should get some more processing time
-      - SYS_NICE
-    networks:
-      - ron-net
+      # DNS only. Add NET_ADMIN for DHCP, SYS_TIME for NTP: https://github.com/pi-hole/docker-pi-hole#note-on-capabilities
+      - SYS_NICE # More processing time
     labels:
       - docker-volume-backup.stop-during-backup=true
 
   # https://hub.docker.com/r/homeassistant/home-assistant
   home-assistant:
-    <<: *base
     image: ghcr.io/home-assistant/home-assistant:stable
     container_name: home-assistant
+    <<: *defaults
     environment:
       TZ: ${TZ}
     volumes:
@@ -73,16 +52,16 @@ services:
     network_mode: host
     labels:
       - docker-volume-backup.stop-during-backup=true
-    depends_on:
-      - pihole
 
   # https://docs.linuxserver.io/images/docker-jellyfin/
   jellyfin:
-    <<: *common
     image: lscr.io/linuxserver/jellyfin:latest
     container_name: jellyfin
+    <<: *defaults
     environment:
-      <<: *arr-env
+      PUID: ${PUID}
+      PGID: ${PGID}
+      TZ: ${TZ}
       JELLYFIN_PublishedServerUrl: ${JELLYFIN_PUBLISHEDSERVERURL}
       DOCKER_MODS: linuxserver/mods:jellyfin-opencl-intel
     volumes:
@@ -97,35 +76,49 @@ services:
       - "${RENDER_GID:-992}" # Host render group, for /dev/dri
     devices:
       - /dev/dri:/dev/dri
+    labels:
+      - docker-volume-backup.stop-during-backup=true
 
   # https://docs.linuxserver.io/images/docker-prowlarr
   prowlarr:
-    <<: *common
     image: lscr.io/linuxserver/prowlarr:latest
     container_name: prowlarr
-    environment: *arr-env
+    <<: *defaults
+    environment:
+      PUID: ${PUID}
+      PGID: ${PGID}
+      TZ: ${TZ}
     volumes:
       - ${LOCAL_PATH}/prowlarr/data:/config
+    labels:
+      - docker-volume-backup.stop-during-backup=true
 
   # https://docs.linuxserver.io/images/docker-sonarr/
   sonarr:
-    <<: *common
     image: lscr.io/linuxserver/sonarr:latest
     container_name: sonarr
-    environment: *arr-env
+    <<: *defaults
+    environment:
+      PUID: ${PUID}
+      PGID: ${PGID}
+      TZ: ${TZ}
     volumes:
       - ${LOCAL_PATH}/sonarr/data:/config
       - ${NAS_PATH}/tv_shows:/tv_shows
       - ${NAS_PATH}/anime:/anime
       - ${DOWNLOAD_PATH}:/downloads
+    labels:
+      - docker-volume-backup.stop-during-backup=true
 
   # https://github.com/MainKronos/Sonarr-AnimeDownloader
   sonarr_anime:
-    <<: *common
     image: ghcr.io/mainkronos/anime_downloader:latest
     container_name: sonarr_anime
+    <<: *defaults
     environment:
-      <<: *arr-env
+      PUID: ${PUID}
+      PGID: ${PGID}
+      TZ: ${TZ}
       SONARR_URL: http://sonarr:8989
       ANIMEWORLD_URL: https://www.animeworld.ac
       API_KEY: ${SONARR_APIKEY}
@@ -134,37 +127,51 @@ services:
       - ${NAS_PATH}/anime:/anime
       - ${DOWNLOAD_PATH}/anime:/downloads
       - ${LOCAL_PATH}/sonarr_anime/connections:/src/script
+    labels:
+      - docker-volume-backup.stop-during-backup=true
 
   # https://docs.linuxserver.io/images/docker-radarr
   radarr:
-    <<: *common
     image: lscr.io/linuxserver/radarr:latest
     container_name: radarr
-    environment: *arr-env
+    <<: *defaults
+    environment:
+      PUID: ${PUID}
+      PGID: ${PGID}
+      TZ: ${TZ}
     volumes:
       - ${LOCAL_PATH}/radarr/data:/config
       - ${NAS_PATH}/movies:/movies
       - ${DOWNLOAD_PATH}:/downloads
+    labels:
+      - docker-volume-backup.stop-during-backup=true
 
   # https://docs.linuxserver.io/images/docker-bazarr/#usage
   bazarr:
-    <<: *common
     image: lscr.io/linuxserver/bazarr:latest
     container_name: bazarr
-    environment: *arr-env
+    <<: *defaults
+    environment:
+      PUID: ${PUID}
+      PGID: ${PGID}
+      TZ: ${TZ}
     volumes:
       - ${LOCAL_PATH}/bazarr/config:/config
       - ${NAS_PATH}/movies:/movies
       - ${NAS_PATH}/tv_shows:/tv_shows
       - ${NAS_PATH}/anime:/anime
+    labels:
+      - docker-volume-backup.stop-during-backup=true
 
   # https://docs.linuxserver.io/images/docker-qbittorrent/
   qbittorrent:
-    <<: *common
     image: lscr.io/linuxserver/qbittorrent:latest
     container_name: qbittorrent
+    <<: *defaults
     environment:
-      <<: *arr-env
+      PUID: ${PUID}
+      PGID: ${PGID}
+      TZ: ${TZ}
       WEBUI_PORT: "8088"
       TORRENTING_PORT: "6881"
     volumes:
@@ -173,14 +180,18 @@ services:
     ports:
       - "6881:6881"
       - "6881:6881/udp"
+    labels:
+      - docker-volume-backup.stop-during-backup=true
 
   # https://github.com/NginxProxyManager/nginx-proxy-manager
   nginx-proxy:
-    <<: *common
     image: jc21/nginx-proxy-manager:latest
     container_name: nginx-proxy
+    <<: *defaults
     environment:
-      <<: *arr-env
+      PUID: ${PUID}
+      PGID: ${PGID}
+      TZ: ${TZ}
       DISABLE_IPV6: "true"
     volumes:
       - ${LOCAL_PATH}/nginx-proxy/data:/data
@@ -189,12 +200,14 @@ services:
       - "80:80" # HTTP
       - "443:443" # HTTPS
       - "81:81" # Admin UI
+    labels:
+      - docker-volume-backup.stop-during-backup=true
 
   # https://tailscale.com/docs/features/containers/docker
   tailscale:
-    <<: *base
     image: tailscale/tailscale:latest
     container_name: tailscale
+    <<: *defaults
     network_mode: host
     environment:
       TS_AUTHKEY: ${TS_AUTHKEY}
@@ -211,30 +224,34 @@ services:
     cap_add:
       - NET_ADMIN
       - NET_RAW
-    depends_on:
-      - pihole
 
   # https://watchtower.nickfedor.com/
   watchtower:
-    <<: *base
     image: nickfedor/watchtower:latest
     container_name: watchtower
+    <<: *defaults
     environment:
       TZ: ${TZ}
       WATCHTOWER_SCHEDULE: "0 0 5 * * 1" # Monday 05:00, after the backup
       WATCHTOWER_CLEANUP: "true"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-    networks:
-      - ron-net
-    depends_on:
-      - pihole
+
+  # https://github.com/louislam/uptime-kuma
+  uptime-kuma:
+    image: louislam/uptime-kuma:2
+    container_name: uptime-kuma
+    <<: *defaults
+    volumes:
+      - ${LOCAL_PATH}/uptime-kuma:/app/data
+    labels:
+      - docker-volume-backup.stop-during-backup=true
 
   # https://offen.github.io/docker-volume-backup/
   backup:
-    <<: *base
     image: offen/docker-volume-backup:v2
     container_name: backup
+    <<: *defaults
     network_mode: none
     environment:
       TZ: ${TZ}
@@ -247,7 +264,3 @@ services:
       - ${LOCAL_PATH}:/backup/services:ro
       - ${NAS_PATH}/backups:/archive
       - /var/run/docker.sock:/var/run/docker.sock:ro
-
-networks:
-  ron-net:
-    driver: bridge

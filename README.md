@@ -202,4 +202,5 @@ newgrp docker
 | [qBittorrent](https://docs.linuxserver.io/images/docker-qbittorrent/) | Download client | `qbittorrent:8088` |
 | [Tailscale](https://tailscale.com/docs/features/containers/docker) | Remote access | - |
 | [Watchtower](https://watchtower.nickfedor.com/) | Weekly image updates | - |
+| [Uptime Kuma](https://github.com/louislam/uptime-kuma) | Alerts when a service goes down | `uptime-kuma:3001` |
 | [Backup](https://offen.github.io/docker-volume-backup/) | Weekly config backup to the NAS | - |
