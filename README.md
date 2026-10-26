@@ -191,7 +191,7 @@ newgrp docker
 |---|---|---|
 | [Pi-hole](https://github.com/pi-hole/docker-pi-hole) | Local DNS and ad blocking | `pihole:80` |
 | [Nginx Proxy Manager](https://github.com/NginxProxyManager/nginx-proxy-manager) | Reverse proxy for `*.ron.home` | admin on port 81 |
-| [Portainer](https://docs.portainer.io/) | Container management | `portainer:9000` |
+| [Arcane](https://getarcane.app/docs) | Container management and weekly image updates | `arcane:3552` |
 | [Home Assistant](https://www.home-assistant.io/) | Home automation and dashboard | `<server IP>:8123` |
 | [Jellyfin](https://docs.linuxserver.io/images/docker-jellyfin/) | Media server | `jellyfin:8096` |
 | [Prowlarr](https://docs.linuxserver.io/images/docker-prowlarr) | Indexer manager | `prowlarr:9696` |
@@ -201,6 +201,5 @@ newgrp docker
 | [Bazarr](https://docs.linuxserver.io/images/docker-bazarr/) | Subtitles | `bazarr:6767` |
 | [qBittorrent](https://docs.linuxserver.io/images/docker-qbittorrent/) | Download client | `qbittorrent:8088` |
 | [Tailscale](https://tailscale.com/docs/features/containers/docker) | Remote access | - |
-| [Watchtower](https://watchtower.nickfedor.com/) | Weekly image updates | - |
 | [Uptime Kuma](https://github.com/louislam/uptime-kuma) | Alerts when a service goes down | `uptime-kuma:3001` |
 | [Backup](https://offen.github.io/docker-volume-backup/) | Weekly config backup to the NAS | - |

@@ -5,14 +5,21 @@ x-defaults: &defaults
     driver: local
 
 services:
-  # https://docs.portainer.io/start/install-ce/server/docker/linux
-  portainer:
-    image: portainer/portainer-ce:lts
-    container_name: portainer
+  # https://getarcane.app/docs/setup/installation
+  arcane:
+    image: ghcr.io/getarcaneapp/manager:latest
+    container_name: arcane
     <<: *defaults
+    environment:
+      TZ: ${TZ}
+      PUID: ${PUID}
+      PGID: ${PGID}
+      APP_URL: ${ARCANE_URL}
+      ENCRYPTION_KEY: ${ARCANE_ENCRYPTION_KEY}
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-      - ${LOCAL_PATH}/portainer/data:/data
+      - ${LOCAL_PATH}/arcane/data:/app/data
+    cgroup: host
     labels:
       - docker-volume-backup.stop-during-backup=true
 
@@ -224,18 +231,6 @@ services:
     cap_add:
       - NET_ADMIN
       - NET_RAW
-
-  # https://watchtower.nickfedor.com/
-  watchtower:
-    image: nickfedor/watchtower:latest
-    container_name: watchtower
-    <<: *defaults
-    environment:
-      TZ: ${TZ}
-      WATCHTOWER_SCHEDULE: "0 0 5 * * 1" # Monday 05:00, after the backup
-      WATCHTOWER_CLEANUP: "true"
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
 
   # https://github.com/louislam/uptime-kuma
   uptime-kuma:
